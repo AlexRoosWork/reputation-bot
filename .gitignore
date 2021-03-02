@@ -1,0 +1,11 @@
+.DS_Store
+.idea
+*.log
+tmp/
+token
+reputation.db
+chatid
+venv/
+__pycache__/
+2020_04_15_reputation.db
+import.py

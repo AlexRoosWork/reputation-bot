@@ -1,0 +1,85 @@
+#+TITLE: TG Reputation Bot
+
+This bot gamifies a telegram group. Users can upvote and downvote messages,
+gather reputation, climb up levels and win championships!
+
+* Commands
+- ~/toprep~ shows the top 10 leaderboard of all time
+- ~/weekly~ shows the weekly leaderboard
+- ~/myrep~ shows the overall repuation of the user, their trophies, availiable
+  votes and current level
+- ~/help~ shows information for the user on the bot
+- ~/rep~ shows a button menu for all the commands
+
+To upvote or downvote a message within the group, reply to a non-bot message with ~+~ or ~-~. Votes are only counted if enough voting power is available.
+
+* Mechanics of the bot
+- Downvotes cost 3 votes, upvotes only one.
+- Every 24 hours voting power is replenished.
+- Users cannot upvote themselves.
+- Every Sunday the bot will pronounce a champion - the user with the most
+  upvotes in the week. Users get a trophy icon for each won championship in
+  their ~/myrep~ message and increase votepower.
+- The level algorithm follows this formula: ~current_level ** 2~
+  + Level 1: 1 upvote needed
+  + Level 2: 4 upvotes needed
+  + Level 3: 9 upvotes needed
+  + Level 4: 16 upvotes needed
+  + And so on... After every level up the xp is reset so a full 16 upvotes are required to level from 3 to 4.
+  + Downvotes down influence XP.
+* Installation
+1. *Clone the git repo and switch into the folder*
+   #+begin_src sh
+    git clone https://gitlab.com/AlexAnarcho/reputation-bot.git
+    cd reputation-bot
+   #+end_src
+2. *Create a virtual environment & activate it* (optional, but recommended)
+   #+begin_src sh
+    python -m venv venv
+    source venv/bin/activate
+   #+end_src
+3. *Install requirements*
+   #+begin_src sh
+    pip install -r requirements.txt
+   #+end_src
+4. *Create an API Token*. Now we need to [[https://core.telegram.org/bots][create a new bot in Telegram]]. For this, simply start a converstation with ~@BotFather~ on Telegram. Type the ~/newbot~ command and follow the instructions. This token needs to be specified in a file called ~token~ in the root dir of the bot. You can replace the placeholder token in ~token_template~ and save the file under the new name ~token~.
+5. *Find the ChatID of the desired group.* Since the bot is primarily designed to work with one specific group, we need to find out the ChatID from Telegram. This can be done multiple ways, for example reading the output of the terminal when running the bot. Another way is using an existing bot, [[https://www.wikihow.com/Know-Chat-ID-on-Telegram-on-Android][like here]]. Again, adjust the ~chatid_template~ with the ChatID and rename the file to ~chatid~.
+6. Finally, *start the bot* from within the directory using
+    #+begin_src sh
+    python main.py
+    #+end_src
+* Running the bot as a service
+Usually we want the reputation to be running 24/7. For this reason run it on an always on computer or server. The simple way to letting it run in the background, is to start tmux and run the script from within there. While this is easy, to do, its not the cleanest way to run the bot.
+
+Instead I suggest to run the ~main.py~ script as a systemctl service. This has the benefit of automatically launching the bot in case of reboot.
+
+** To set up the bot as a service use this as a template and save in ~/etc/systemd/system/BOTNAME.service~
+
+#+begin_src sh
+[Unit]
+Description = Run Reputation TG Bot
+After = network.target
+
+[Service]
+Type = simple
+ExecStart = /PATH/TO/DIRECTORY/reputation-bot/venv/bin/python /PATH/TO/DIRECTORY/reputation-bot/main.py
+Restart = on-failure # Restart when there are errors
+RestartSec = 5
+TimeoutStartSec = infinity
+
+[Install]
+WantedBy = multi-user.target # Make it accessible to other users
+#+end_src
+
+- Make sure to replace ~/PATH/TO/DIRECTORY~ with the actual path to the venv and ~main.py~
+- Ensure that the service file has the file extension ~.service~
+
+
+** Enable the service
+Final step is to enable the service on the machine with
+
+#+begin_src sh
+sudo systemctl enable BOTNAME.service
+#+end_src
+** Check service status
+Checking the status of the service is easy to do with ~sudo systemctl status BOTNAME.service~
